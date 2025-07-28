@@ -1,21 +1,46 @@
 package main
 
 import (
-  "fmt"
+	"context"
+	"fmt"
+	"time"
+
+	//"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-//TIP <p>To run your code, right-click the code and select <b>Run</b>.</p> <p>Alternatively, click
-// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.</p>
+func startContainer(ctx *context.Context) *testcontainers.Container {
+
+	req := testcontainers.ContainerRequest{
+		Image:        "redis:latest",
+		ExposedPorts: []string{"6379/tcp"},
+		WaitingFor:   wait.ForLog("Ready to accept connections"),
+	}
+	redisC, err := testcontainers.GenericContainer(*ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+	if err != nil {
+		panic(err)
+	}
+	return &redisC
+	//testcontainers.CleanupContainer(t, redisC)
+	//require.NoError(t, err)
+}
+
+func stopContainer(ctx *context.Context, container *testcontainers.Container) {
+	duration := 1 * time.Second
+	(*container).Stop(*ctx, &duration)
+	//container.CleanupContainer(t, redisC)
+	//require.NoError(t, err)
+}
 
 func main() {
-  //TIP <p>Press <shortcut actionId="ShowIntentionActions"/> when your caret is at the underlined text
-  // to see how GoLand suggests fixing the warning.</p><p>Alternatively, if available, click the lightbulb to view possible fixes.</p>
-  s := "gopher"
-  fmt.Printf("Hello and welcome, %s!\n", s)
+	ctx := context.Background()
+	fmt.Printf("Attempt to start test container ...\n")
+	container := startContainer(&ctx)
+	time.Sleep(10 * time.Second)
+	stopContainer(&ctx, container)
 
-  for i := 1; i <= 5; i++ {
-	//TIP <p>To start your debugging session, right-click your code in the editor and select the Debug option.</p> <p>We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-	// for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.</p>
-	fmt.Println("i =", 100/i)
-  }
 }
